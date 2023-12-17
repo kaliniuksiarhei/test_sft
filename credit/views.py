@@ -1,19 +1,8 @@
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse
 
-from .models import Application, Manufacturer
-
-
-def from_application(request, id):
-    try:
-        application = Application.objects.get(contract=id)
-    except ObjectDoesNotExist:
-        return HttpResponseNotFound('Application not found')
-
-    manufacturers = Manufacturer.objects.filter(products__application=application.id).distinct()
-    return HttpResponse(', '.join(map(str, [m.id for m in manufacturers])))
+from .models import Application
 
 
-def one_query(request, id):
-    manufacturers = Manufacturer.objects.filter(products__application__contract=id).distinct()
-    return HttpResponse(', '.join(map(str, [m.id for m in manufacturers])))
+def get_unique_manufacturers(request, id):
+    res = Application.objects.filter(contract=id).values_list('products__manufacturer_id').distinct()
+    return HttpResponse(', '.join(map(str, [row[0] for row in res])))
